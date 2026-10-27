@@ -14,11 +14,17 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: whoami
-        run: echo "actor=${{ github.actor }} repo=${{ github.repository }}"
-      - name: can-push-blob
+      - name: real-push-tiny-image
         run: |
-          set -x
-          T=$(curl -sS -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
-            "https://ghcr.io/v2/any1tan/dsh-purge/blobs/uploads/" -X POST -w '\nHTTP:%{http_code}\n')
-          echo "$T" | tail -3
+          set -e
+          mkdir -p /tmp/b && cd /tmp/b
+          printf 'hello-ghcr-probe\n' > f.txt
+          cat > Dockerfile <<'EOF'
+          FROM scratch
+          COPY f.txt /f.txt
+          EOF
+          docker build -t ghcr.io/any1tan/zz-probe-test:probe1 .
+          echo "--- pushing ---"
+          docker push ghcr.io/any1tan/zz-probe-test:probe1
+          echo "--- digest ---"
+          docker inspect ghcr.io/any1tan/zz-probe-test:probe1 --format '{{index .RepoDigests 0}}'
