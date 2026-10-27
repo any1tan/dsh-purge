@@ -1,0 +1,24 @@
+name: ghcr-probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: login
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: whoami
+        run: echo "actor=${{ github.actor }} repo=${{ github.repository }}"
+      - name: can-push-blob
+        run: |
+          set -x
+          T=$(curl -sS -u "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" \
+            "https://ghcr.io/v2/any1tan/dsh-purge/blobs/uploads/" -X POST -w '\nHTTP:%{http_code}\n')
+          echo "$T" | tail -3
